@@ -1,19 +1,29 @@
 #import <Foundation/Foundation.h>
+#import <objc/runtime.h>
+
+@interface YTMutableCellFactory : NSObject
+- (id)cellControllerForEntry:(id)entry
+             parentResponder:(id)parentResponder;
+@end
 
 %hook YTMutableCellFactory
 
 - (id)cellControllerForEntry:(id)entry
              parentResponder:(id)parentResponder
 {
-    NSLog(@"[BBCPM] cellControllerForEntry: %@", entry);
+    id result = %orig;
 
-    if (entry &&
-        [[entry description] containsString:@"images_post_responsive_root.eml"]) {
-        NSLog(@"[BBCPM] MATCH images_post_responsive_root.eml");
-        return nil;
+    if (result &&
+        [NSStringFromClass([result class]) isEqualToString:@"YTCommentElementCellController"]) {
+
+        NSString *description = [entry description];
+
+        if ([description containsString:@"images_post_responsive_root.eml"]) {
+            return nil;
+        }
     }
 
-    return %orig;
+    return result;
 }
 
 %end
