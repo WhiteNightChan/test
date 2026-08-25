@@ -1,29 +1,49 @@
 #import <Foundation/Foundation.h>
 #import <objc/runtime.h>
 
-@interface YTMutableCellFactory : NSObject
-- (id)cellControllerForEntry:(id)entry
-             parentResponder:(id)parentResponder;
+#pragma mark - YTCommentElementCellController
+
+@interface YTCommentElementCellController : NSObject
 @end
 
-%hook YTMutableCellFactory
+%hook YTCommentElementCellController
 
-- (id)cellControllerForEntry:(id)entry
-             parentResponder:(id)parentResponder
-{
-    id result = %orig;
+- (id)init {
+    NSLog(@"[YTCDT] YTCommentElementCellController init: %@", self);
 
-    if (result &&
-        [NSStringFromClass([result class]) isEqualToString:@"YTCommentElementCellController"]) {
+    id ret = %orig;
 
-        NSString *description = [entry description];
+    NSLog(@"[YTCDT] YTCommentElementCellController init -> %@", ret);
 
-        if ([description containsString:@"images_post_responsive_root.eml"]) {
-            return nil;
-        }
-    }
-
-    return result;
+    return ret;
 }
 
 %end
+
+#pragma mark - Tweak load test
+
+%ctor {
+    NSLog(@"[YTCDT] ===== Tweak loaded =====");
+
+    dispatch_async(dispatch_get_main_queue(), ^{
+        dispatch_source_t timer =
+            dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0,
+                                   dispatch_get_main_queue());
+
+        dispatch_source_set_timer(
+            timer,
+            dispatch_time(DISPATCH_TIME_NOW, 0),
+            NSEC_PER_SEC,
+            0
+        );
+
+        dispatch_source_set_event_handler(timer, ^{
+            NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
+            formatter.dateFormat = @"yyyy-MM-dd HH:mm:ss";
+
+            NSLog(@"[YTCDT] heartbeat: %@", [formatter stringFromDate:[NSDate date]]);
+        });
+
+        dispatch_resume(timer);
+    });
+}
