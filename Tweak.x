@@ -1,49 +1,72 @@
+// Tweak.x
+
 #import <Foundation/Foundation.h>
-#import <objc/runtime.h>
+#import <objc/message.h>
 
-#pragma mark - YTCommentElementCellController
+static BOOL IsBackstageCommunityEntry(id entry)
+{
+    if (!entry)
+        return NO;
 
-@interface YTCommentElementCellController : NSObject
-@end
+    if (![entry respondsToSelector:@selector(compatibilityOptions)])
+        return NO;
 
-%hook YTCommentElementCellController
+    id options = ((id (*)(id, SEL))objc_msgSend)(
+        entry,
+        @selector(compatibilityOptions)
+    );
 
-- (id)init {
-    NSLog(@"[YTCDT] YTCommentElementCellController init: %@", self);
+    if (!options)
+        return NO;
 
-    id ret = %orig;
+    if (![options respondsToSelector:@selector(useBackstageCellControllerOnIos)])
+        return NO;
 
-    NSLog(@"[YTCDT] YTCommentElementCellController init -> %@", ret);
+    return ((BOOL (*)(id, SEL))objc_msgSend)(
+        options,
+        @selector(useBackstageCellControllerOnIos)
+    );
+}
 
-    return ret;
+
+// ============================================================
+// 1. YTInnerTubeCellFactory
+//
+// use_backstage_cell_controller_on_ios == true の Entry に対して
+// CellController の生成そのものを nil にする。
+// ============================================================
+
+%hook YTInnerTubeCellFactory
+
+- (id)cellControllerForEntry:(id)entry
+            parentResponder:(id)parentResponder
+{
+    if (IsBackstageCommunityEntry(entry)) {
+        return nil;
+    }
+
+    return %orig;
 }
 
 %end
 
-#pragma mark - Tweak load test
 
-%ctor {
-    NSLog(@"[YTCDT] ===== Tweak loaded =====");
+// ============================================================
+// 2. YTSectionController
+//
+// Factory が nil を返した後に作られる
+// YTCellController フォールバックも nil にする。
+// ============================================================
 
-    dispatch_async(dispatch_get_main_queue(), ^{
-        dispatch_source_t timer =
-            dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0,
-                                   dispatch_get_main_queue());
+%hook YTSectionController
 
-        dispatch_source_set_timer(
-            timer,
-            dispatch_time(DISPATCH_TIME_NOW, 0),
-            NSEC_PER_SEC,
-            0
-        );
+- (id)createCellControllerForEntry:(id)entry
+{
+    if (IsBackstageCommunityEntry(entry)) {
+        return nil;
+    }
 
-        dispatch_source_set_event_handler(timer, ^{
-            NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
-            formatter.dateFormat = @"yyyy-MM-dd HH:mm:ss";
-
-            NSLog(@"[YTCDT] heartbeat: %@", [formatter stringFromDate:[NSDate date]]);
-        });
-
-        dispatch_resume(timer);
-    });
+    return %orig;
 }
+
+%end
