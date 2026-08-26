@@ -1,5 +1,4 @@
 #import <Foundation/Foundation.h>
-#import <objc/message.h>
 
 @interface YTIElementRenderer : NSObject
 - (id)compatibilityOptions;
@@ -9,16 +8,41 @@
 - (BOOL)useBackstageCellControllerOnIos;
 @end
 
+
+static BOOL YTIsCommunityPostEntry(id entry)
+{
+    Class cls = %c(YTIElementRenderer);
+
+    if (!cls || ![entry isKindOfClass:cls])
+        return NO;
+
+    id options = [(YTIElementRenderer *)entry compatibilityOptions];
+
+    return [(YTCompatibilityOptions *)options useBackstageCellControllerOnIos];
+}
+
+
+%hook YTMutableCellFactory
+
+- (id)cellControllerForEntry:(id)entry
+             parentResponder:(id)parentResponder
+{
+    if (YTIsCommunityPostEntry(entry)) {
+        return nil;
+    }
+
+    return %orig;
+}
+
+%end
+
+
 %hook YTFeedSectionController
 
-- (id)createCellControllerForEntry:(id)entry {
-    if ([entry isKindOfClass:%c(YTIElementRenderer)]) {
-        YTCompatibilityOptions *options =
-            (YTCompatibilityOptions *)[entry compatibilityOptions];
-
-        if ([options useBackstageCellControllerOnIos]) {
-            return nil;
-        }
+- (id)createCellControllerForEntry:(id)entry
+{
+    if (YTIsCommunityPostEntry(entry)) {
+        return nil;
     }
 
     return %orig;
