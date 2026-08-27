@@ -1,54 +1,60 @@
-#import <Foundation/Foundation.h>
-#import <objc/runtime.h>
+#import <YouTubeHeader/YTIElementRenderer.h>
+#import <YouTubeHeader/YTIItemSectionRenderer.h>
+#import <YouTubeHeader/YTIItemSectionSupportedRenderers.h>
+#import <YouTubeHeader/YTInnerTubeCollectionViewController.h>
 
-static id (*orig_classForElement)(id self, SEL _cmd, id element, id context);
+@interface YTIElementRendererCompatibilityOptions (YTX)
+- (BOOL)useBackstageCellControllerOnIos;
+@end
 
-static id hooked_classForElement(id self, SEL _cmd, id element, id context)
-{
-    id nodeClass = orig_classForElement(self, _cmd, element, context);
+static NSArray *YTXFilteredSections(NSArray *sections) {
+    NSMutableArray *filtered = [sections mutableCopy];
 
-    if (nodeClass != nil) {
-        Class commentNodeClass = objc_getClass("YTCommentNode");
+    for (YTIItemSectionRenderer *section in [filtered copy]) {
+        if (![section isKindOfClass:%c(YTIItemSectionRenderer)])
+            continue;
 
-        if (commentNodeClass != Nil &&
-            nodeClass == (id)commentNodeClass) {
+        NSMutableArray *contents = [section.contentsArray mutableCopy];
 
-            NSLog(@"[YTCDT-Test] YTCommentNode blocked: %@", element);
-            return nil;
-        }
+        NSIndexSet *removeIndexes =
+            [contents indexesOfObjectsPassingTest:
+                ^BOOL(YTIItemSectionSupportedRenderers *item,
+                      NSUInteger idx,
+                      BOOL *stop) {
+
+            YTIElementRenderer *renderer = item.elementRenderer;
+
+            if (!renderer)
+                return NO;
+
+            if (![renderer respondsToSelector:
+                    @selector(compatibilityOptions)])
+                return NO;
+
+            id options = renderer.compatibilityOptions;
+
+            if (!options)
+                return NO;
+
+            if (![options respondsToSelector:
+                    @selector(useBackstageCellControllerOnIos)])
+                return NO;
+
+            return [options useBackstageCellControllerOnIos];
+        }];
+
+        [contents removeObjectsAtIndexes:removeIndexes];
+
+        section.contentsArray = contents;
     }
 
-    return nodeClass;
+    return filtered;
 }
 
-__attribute__((constructor))
-static void init_tweak(void)
-{
-    Class cls = objc_getClass("ELMNodeFactory");
+%hook YTInnerTubeCollectionViewController
 
-    if (cls == Nil) {
-        NSLog(@"[YTCDT-Test] ELMNodeFactory not found");
-        return;
-    }
-
-    SEL sel = sel_registerName(
-        "classForElement:materializationContext:"
-    );
-
-    Method method = class_getInstanceMethod(cls, sel);
-
-    if (method == NULL) {
-        NSLog(@"[YTCDT-Test] classForElement:materializationContext: not found");
-        return;
-    }
-
-    orig_classForElement =
-        (id (*)(id, SEL, id, id))method_getImplementation(method);
-
-    method_setImplementation(
-        method,
-        (IMP)hooked_classForElement
-    );
-
-    NSLog(@"[YTCDT-Test] Hook installed");
+- (void)addSectionsFromArray:(NSArray *)array {
+    %orig(YTXFilteredSections(array));
 }
+
+%end
