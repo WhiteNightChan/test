@@ -1,51 +1,54 @@
 #import <Foundation/Foundation.h>
+#import <objc/runtime.h>
 
-@interface YTIElementRenderer : NSObject
-- (id)compatibilityOptions;
-@end
+static id (*orig_classForElement)(id self, SEL _cmd, id element, id context);
 
-@interface YTCompatibilityOptions : NSObject
-- (BOOL)useBackstageCellControllerOnIos;
-@end
-
-
-static BOOL YTIsCommunityPostEntry(id entry)
+static id hooked_classForElement(id self, SEL _cmd, id element, id context)
 {
-    Class cls = %c(YTIElementRenderer);
+    id nodeClass = orig_classForElement(self, _cmd, element, context);
 
-    if (!cls || ![entry isKindOfClass:cls])
-        return NO;
+    if (nodeClass != nil) {
+        Class commentNodeClass = objc_getClass("YTCommentNode");
 
-    id options = [(YTIElementRenderer *)entry compatibilityOptions];
+        if (commentNodeClass != Nil &&
+            nodeClass == (id)commentNodeClass) {
 
-    return [(YTCompatibilityOptions *)options useBackstageCellControllerOnIos];
-}
-
-
-%hook YTMutableCellFactory
-
-- (id)cellControllerForEntry:(id)entry
-             parentResponder:(id)parentResponder
-{
-    if (YTIsCommunityPostEntry(entry)) {
-        return nil;
+            NSLog(@"[YTCDT-Test] YTCommentNode blocked: %@", element);
+            return nil;
+        }
     }
 
-    return %orig;
+    return nodeClass;
 }
 
-%end
-
-
-%hook YTFeedSectionController
-
-- (id)createCellControllerForEntry:(id)entry
+__attribute__((constructor))
+static void init_tweak(void)
 {
-    if (YTIsCommunityPostEntry(entry)) {
-        return nil;
+    Class cls = objc_getClass("ELMNodeFactory");
+
+    if (cls == Nil) {
+        NSLog(@"[YTCDT-Test] ELMNodeFactory not found");
+        return;
     }
 
-    return %orig;
-}
+    SEL sel = sel_registerName(
+        "classForElement:materializationContext:"
+    );
 
-%end
+    Method method = class_getInstanceMethod(cls, sel);
+
+    if (method == NULL) {
+        NSLog(@"[YTCDT-Test] classForElement:materializationContext: not found");
+        return;
+    }
+
+    orig_classForElement =
+        (id (*)(id, SEL, id, id))method_getImplementation(method);
+
+    method_setImplementation(
+        method,
+        (IMP)hooked_classForElement
+    );
+
+    NSLog(@"[YTCDT-Test] Hook installed");
+}
