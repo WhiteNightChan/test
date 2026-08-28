@@ -1,7 +1,7 @@
-Package: com.whitenightchan.byebyecommunitypostmaybe
-Name: Bye Bye Community Post Maybe
-Description: Hide YouTube Community Posts. Maybe.
-Version: 0.0.5
+Package: com.whitenightchan.nothankyoutube
+Name: NoThankYouTube
+Description: Customize YouTube to show only the elements you want to see.
+Version: 0.0.1
 Architecture: iphoneos-arm
 Maintainer: WhiteNightChan
 Author: WhiteNightChan

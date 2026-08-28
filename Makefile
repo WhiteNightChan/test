@@ -6,7 +6,7 @@ FINALPACKAGE = 1
 
 include $(THEOS)/makefiles/common.mk
 
-TWEAK_NAME = ByeByeCommunityPostMaybe
+TWEAK_NAME = NoThankYouTube
 
 $(TWEAK_NAME)_FILES = $(shell find . -type f \( -name "*.x" -o -name "*.xm" \))
 $(TWEAK_NAME)_CFLAGS = -fobjc-arc
