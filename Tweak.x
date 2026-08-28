@@ -30,10 +30,14 @@ NSString *getCommunityPostString(NSString *description) {
 }
 
 static BOOL isCommunityPostRenderer(YTIElementRenderer *elementRenderer, int kind) {
+
+    // Primary: useBackstageCellControllerOnIos
     if ([elementRenderer respondsToSelector:@selector(hasCompatibilityOptions)] && elementRenderer.hasCompatibilityOptions && elementRenderer.compatibilityOptions.useBackstageCellControllerOnIos) {
         HBLogDebug(@"BBCPM adLogging %d %@", kind, elementRenderer);
         return YES;
     }
+
+    // Fallback: ElementRenderer.description EML
     NSString *description = [elementRenderer description];
     NSString *postString = getCommunityPostString(description);
     if (postString) {
@@ -43,9 +47,14 @@ static BOOL isCommunityPostRenderer(YTIElementRenderer *elementRenderer, int kin
     return NO;
 }
 
+
+// Community PostをElement単位またはSection単位で除去する。
+// useBackstageCellControllerOnIosを主判定とし、EML descriptionをfallbackとして使用。
 static NSMutableArray <YTIItemSectionRenderer *> *filteredArray(NSArray <YTIItemSectionRenderer *> *array) {
     NSMutableArray <YTIItemSectionRenderer *> *newArray = [array mutableCopy];
     NSIndexSet *removeIndexes = [newArray indexesOfObjectsPassingTest:^BOOL(YTIItemSectionRenderer *sectionRenderer, NSUInteger idx, BOOL *stop) {
+
+        // Shelf.itemsArray ElementRenderer
         if ([sectionRenderer isKindOfClass:%c(YTIShelfRenderer)]) {
             YTIShelfSupportedRenderers *content = ((YTIShelfRenderer *)sectionRenderer).content;
             YTIHorizontalListRenderer *horizontalListRenderer = content.horizontalListRenderer;
@@ -59,6 +68,9 @@ static NSMutableArray <YTIItemSectionRenderer *> *filteredArray(NSArray <YTIItem
         if (![sectionRenderer isKindOfClass:%c(YTIItemSectionRenderer)])
             return NO;
         NSMutableArray <YTIItemSectionSupportedRenderers *> *contentsArray = sectionRenderer.contentsArray;
+
+        // Section.contentsArray ElementRenderer
+        // Section内に複数Elementがある場合は、Community Postだけを個別除去
         if (contentsArray.count > 1) {
             NSIndexSet *removeContentsArrayIndexes = [contentsArray indexesOfObjectsPassingTest:^BOOL(YTIItemSectionSupportedRenderers *sectionSupportedRenderers, NSUInteger idx2, BOOL *stop2) {
                 YTIElementRenderer *elementRenderer = sectionSupportedRenderers.elementRenderer;
@@ -66,15 +78,17 @@ static NSMutableArray <YTIItemSectionRenderer *> *filteredArray(NSArray <YTIItem
             }];
             [contentsArray removeObjectsAtIndexes:removeContentsArrayIndexes];
         }
-        /* 重いのでブロック漏れした時のみコメントアウト解除予定
-        // fallback
+
+        // Fallback: SectionRenderer.description
         NSString *sectionDescription = [sectionRenderer description];
         NSString *sectionPostString = getCommunityPostString(sectionDescription);
         if (sectionPostString) {
         HBLogDebug(@"BBCPM sectionFallback %@ %@", sectionPostString, sectionRenderer);
             return YES;
         }
-        */
+
+        // Section.firstObject ElementRenderer
+        // Community PostならSectionごと削除
         YTIItemSectionSupportedRenderers *firstObject = [contentsArray firstObject];
         YTIElementRenderer *elementRenderer = firstObject.elementRenderer;
         return isCommunityPostRenderer(elementRenderer, 2);
