@@ -1,12 +1,7 @@
-#import <YouTubeHeader/_ASDisplayView.h>
 #import <YouTubeHeader/YTIElementRenderer.h>
-#import <YouTubeHeader/YTInnerTubeCollectionViewController.h>
 #import <YouTubeHeader/YTISectionListRenderer.h>
 #import <YouTubeHeader/YTIShelfRenderer.h>
-#import <YouTubeHeader/YTIWatchNextResponse.h>
-#import <YouTubeHeader/YTPlayerOverlay.h>
-#import <YouTubeHeader/YTPlayerOverlayProvider.h>
-#import <YouTubeHeader/YTReelModel.h>
+#import <YouTubeHeader/YTInnerTubeCollectionViewController.h>
 #import <HBLog.h>
 
 @interface YTIElementRendererCompatibilityOptions (BBCPM)
@@ -68,6 +63,14 @@ static NSMutableArray <YTIItemSectionRenderer *> *filteredArray(NSArray <YTIItem
             }];
             [contentsArray removeObjectsAtIndexes:removeContentsArrayIndexes];
         }
+
+        NSString *sectionDescription = [sectionRenderer description];
+        NSString *sectionPostString = getCommunityPostString(sectionDescription);
+        if (sectionPostString) {
+        HBLogDebug(@"BBCPM sectionFallback %@ %@", sectionPostString, sectionRenderer);
+            return YES;
+        }
+
         YTIItemSectionSupportedRenderers *firstObject = [contentsArray firstObject];
         YTIElementRenderer *elementRenderer = firstObject.elementRenderer;
         return isCommunityPostRenderer(elementRenderer, 2);
