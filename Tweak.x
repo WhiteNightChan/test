@@ -13,81 +13,6 @@
 - (BOOL)useBackstageCellControllerOnIos;
 @end
 
-%hook YTReelDataSource
-
-- (YTReelModel *)makeContentModelForEntry:(id)entry {
-    YTReelModel *model = %orig;
-    if ([model respondsToSelector:@selector(videoType)] && model.videoType == 3)
-        return nil;
-    return model;
-}
-
-%end
-
-// For newer YouTube versions
-%hook YTReelContentModel
-
-+ (YTReelModel *)makeContentModelForEntry:(id)entry {
-    YTReelModel *model = %orig;
-    if ([model respondsToSelector:@selector(videoType)] && model.videoType == 3)
-        return nil;
-    return model;
-}
-
-%end
-
-%hook YTReelInfinitePlaybackDataSource
-
-- (YTReelModel *)makeContentModelForEntry:(id)entry {
-    YTReelModel *model = %orig;
-    if ([model respondsToSelector:@selector(videoType)] && model.videoType == 3)
-        return nil;
-    return model;
-}
-
-- (void)setReels:(NSMutableOrderedSet <YTReelModel *> *)reels {
-    [reels removeObjectsAtIndexes:[reels indexesOfObjectsPassingTest:^BOOL(YTReelModel *obj, NSUInteger idx, BOOL *stop) {
-        return [obj respondsToSelector:@selector(videoType)] ? obj.videoType == 3 : NO;
-    }]];
-    %orig;
-}
-
-%end
-
-static BOOL isProductList(YTICommand *command) {
-    if ([command respondsToSelector:@selector(yt_showEngagementPanelEndpoint)]) {
-        YTIShowEngagementPanelEndpoint *endpoint = [command yt_showEngagementPanelEndpoint];
-        return [endpoint.identifier.tag isEqualToString:@"PAproduct_list"];
-    }
-    return NO;
-}
-
-%hook YTWatchNextResponseViewController
-
-- (void)loadWithModel:(YTIWatchNextResponse *)model {
-    YTICommand *onUiReady = model.onUiReady;
-    if ([onUiReady respondsToSelector:@selector(yt_commandExecutorCommand)]) {
-        YTICommandExecutorCommand *commandExecutorCommand = [onUiReady yt_commandExecutorCommand];
-        NSMutableArray <YTICommand *> *commandsArray = commandExecutorCommand.commandsArray;
-        [commandsArray removeObjectsAtIndexes:[commandsArray indexesOfObjectsPassingTest:^BOOL(YTICommand *command, NSUInteger idx, BOOL *stop) {
-            return isProductList(command);
-        }]];
-    }
-    if (isProductList(onUiReady))
-        model.onUiReady = nil;
-    %orig;
-}
-
-%end
-
-%hook YTMainAppVideoPlayerOverlayViewController
-
-- (void)playerOverlayProvider:(YTPlayerOverlayProvider *)provider didInsertPlayerOverlay:(YTPlayerOverlay *)overlay {
-    if ([[overlay overlayIdentifier] isEqualToString:@"player_overlay_product_in_video"]) return;
-    %orig;
-}
-%end
-
 NSString *getCommunityPostString(NSString *description) {
     for (NSString *str in @[
         @"post_base_wrapper.eml",
@@ -112,9 +37,9 @@ static BOOL isCommunityPostRenderer(YTIElementRenderer *elementRenderer, int kin
         return YES;
     }
     NSString *description = [elementRenderer description];
-    NSString *adString = getCommunityPostString(description);
-    if (adString) {
-        HBLogDebug(@"BBCPM getCommunityPostString %d %@ %@", kind, adString, elementRenderer);
+    NSString *postString = getCommunityPostString(description);
+    if (postString) {
+        HBLogDebug(@"BBCPM getCommunityPostString %d %@ %@", kind, postString, elementRenderer);
         return YES;
     }
     return NO;
@@ -150,16 +75,6 @@ static NSMutableArray <YTIItemSectionRenderer *> *filteredArray(NSArray <YTIItem
     [newArray removeObjectsAtIndexes:removeIndexes];
     return newArray;
 }
-
-%hook _ASDisplayView
-
-- (void)didMoveToWindow {
-    %orig;
-    if (([self.accessibilityIdentifier isEqualToString:@"eml.expandable_metadata.vpp"]))
-        [self removeFromSuperview];
-}
-
-%end
 
 %hook YTInnerTubeCollectionViewController
 
