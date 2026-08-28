@@ -19,7 +19,10 @@ NSString *getCommunityPostString(NSString *description) {
         @"text_post_root.eml",
         @"text_post_root_slim.eml",
         @"videos_post_root.eml",
-        @"videos_post_responsive_root.eml"
+        @"videos_post_responsive_root.eml",
+        @"poll_post_root.eml",
+        @"options_post_root.eml",
+        @"options_post_responsive_root.eml"
     ])
         if ([description containsString:str]) return str;
 
@@ -63,14 +66,15 @@ static NSMutableArray <YTIItemSectionRenderer *> *filteredArray(NSArray <YTIItem
             }];
             [contentsArray removeObjectsAtIndexes:removeContentsArrayIndexes];
         }
-
+        /* 重いのでブロック漏れした時のみコメントアウト解除予定
+        // fallback
         NSString *sectionDescription = [sectionRenderer description];
         NSString *sectionPostString = getCommunityPostString(sectionDescription);
         if (sectionPostString) {
         HBLogDebug(@"BBCPM sectionFallback %@ %@", sectionPostString, sectionRenderer);
             return YES;
         }
-
+        */
         YTIItemSectionSupportedRenderers *firstObject = [contentsArray firstObject];
         YTIElementRenderer *elementRenderer = firstObject.elementRenderer;
         return isCommunityPostRenderer(elementRenderer, 2);
