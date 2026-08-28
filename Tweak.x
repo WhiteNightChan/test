@@ -12,13 +12,10 @@
 @end
 
 static BOOL isCommunityPostRenderer(YTIElementRenderer *elementRenderer, int kind) {
-    if ([elementRenderer respondsToSelector:@selector(hasCompatibilityOptions)] &&
-        elementRenderer.hasCompatibilityOptions &&
-        elementRenderer.compatibilityOptions.useBackstageCellControllerOnIos) {
-        return YES;
-    }
+    if (![elementRenderer isKindOfClass:%c(YTIElementRenderer)])
+        return NO;
 
-    return NO;
+    return elementRenderer.compatibilityOptions.useBackstageCellControllerOnIos;
 }
 
 static NSMutableArray <YTIItemSectionRenderer *> *filteredArray(NSArray <YTIItemSectionRenderer *> *array) {
