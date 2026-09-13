@@ -14,6 +14,10 @@ NSString *NTYTStringFromField(NTYTField field) {
             return @"video_id";
         case NTYTFieldChannelIdentity:
             return @"channel_identity";
+        case NTYTFieldIsVideo:
+            return @"is_video";
+        case NTYTFieldIsShort:
+            return @"is_short";
         case NTYTFieldViewCount:
             return @"view_count";
         case NTYTFieldDescription:
@@ -49,6 +53,12 @@ NTYTField NTYTFieldFromString(NSString *string) {
     }
     if ([string isEqualToString:@"channel_identity"]) {
         return NTYTFieldChannelIdentity;
+    }
+    if ([string isEqualToString:@"is_video"]) {
+        return NTYTFieldIsVideo;
+    }
+    if ([string isEqualToString:@"is_short"]) {
+        return NTYTFieldIsShort;
     }
     if ([string isEqualToString:@"view_count"]) {
         return NTYTFieldViewCount;

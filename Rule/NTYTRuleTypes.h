@@ -18,11 +18,16 @@ typedef NS_ERROR_ENUM(NTYTRuleModelErrorDomain, NTYTRuleModelErrorCode) {
 typedef NS_ENUM(NSInteger, NTYTField) {
     NTYTFieldUnknown = 0,
 
+    // Virtual/text fields used by rules.
     NTYTFieldGeneralText,
     NTYTFieldContentText,
     NTYTFieldVideoText,
     NTYTFieldVideoID,
     NTYTFieldChannelIdentity,
+
+    // Type predicates.
+    NTYTFieldIsVideo,
+    NTYTFieldIsShort,
 
     // Special / future-provider fields.
     NTYTFieldViewCount,

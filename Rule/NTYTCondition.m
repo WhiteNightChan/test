@@ -44,12 +44,31 @@ static BOOL NTYTValueIsValidForMatcher(
         caseSensitiveOverride:(NTYTOptionOverride)caseSensitiveOverride
            exactMatchOverride:(NTYTOptionOverride)exactMatchOverride
          wordBoundaryOverride:(NTYTOptionOverride)wordBoundaryOverride {
+    return [self initWithField:field
+                       matcher:matcher
+                         value:value
+                    regexFlags:nil
+                       negated:negated
+         caseSensitiveOverride:caseSensitiveOverride
+            exactMatchOverride:exactMatchOverride
+          wordBoundaryOverride:wordBoundaryOverride];
+}
+
+- (instancetype)initWithField:(NTYTField)field
+                      matcher:(NTYTMatcher)matcher
+                        value:(id<NSCopying>)value
+                   regexFlags:(NSString *)regexFlags
+                      negated:(BOOL)negated
+        caseSensitiveOverride:(NTYTOptionOverride)caseSensitiveOverride
+           exactMatchOverride:(NTYTOptionOverride)exactMatchOverride
+         wordBoundaryOverride:(NTYTOptionOverride)wordBoundaryOverride {
     self = [super init];
 
     if (self) {
         _field = field;
         _matcher = matcher;
         _value = [value copyWithZone:nil];
+        _regexFlags = [regexFlags copy];
         _negated = negated;
         _caseSensitiveOverride = caseSensitiveOverride;
         _exactMatchOverride = exactMatchOverride;
@@ -118,6 +137,21 @@ static BOOL NTYTValueIsValidForMatcher(
         return nil;
     }
 
+    id regexFlagsObject = dictionary[@"regexFlags"];
+    NSString *regexFlags = nil;
+    if (regexFlagsObject && regexFlagsObject != [NSNull null]) {
+        if (![regexFlagsObject isKindOfClass:[NSString class]]) {
+            if (error) {
+                *error = NTYTConditionError(
+                    NTYTRuleModelErrorInvalidValueType,
+                    @"regexFlags must be a string or null."
+                );
+            }
+            return nil;
+        }
+        regexFlags = (NSString *)regexFlagsObject;
+    }
+
     BOOL negated = [dictionary[@"negated"] boolValue];
 
     NSDictionary *options = dictionary[@"options"];
@@ -163,6 +197,7 @@ static BOOL NTYTValueIsValidForMatcher(
         initWithField:field
         matcher:matcher
         value:(id<NSCopying>)value
+        regexFlags:regexFlags
         negated:negated
         caseSensitiveOverride:caseSensitive
         exactMatchOverride:exactMatch
@@ -170,7 +205,7 @@ static BOOL NTYTValueIsValidForMatcher(
 }
 
 - (NSDictionary *)dictionaryRepresentation {
-    return @{
+    NSMutableDictionary *dictionary = [@{
         @"field": NTYTStringFromField(self.field),
         @"matcher": NTYTStringFromMatcher(self.matcher),
         @"value": self.value,
@@ -189,7 +224,13 @@ static BOOL NTYTValueIsValidForMatcher(
                     self.wordBoundaryOverride
                 ),
         },
-    };
+    } mutableCopy];
+
+    if (self.regexFlags.length > 0) {
+        dictionary[@"regexFlags"] = self.regexFlags;
+    }
+
+    return [dictionary copy];
 }
 
 - (id)copyWithZone:(NSZone *)zone {

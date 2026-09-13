@@ -9,6 +9,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, readonly) NTYTField field;
 @property (nonatomic, readonly) NTYTMatcher matcher;
 @property (nonatomic, copy, readonly) id<NSCopying> value;
+@property (nonatomic, copy, readonly, nullable) NSString *regexFlags;
 @property (nonatomic, readonly, getter=isNegated) BOOL negated;
 
 @property (nonatomic, readonly) NTYTOptionOverride caseSensitiveOverride;
@@ -18,9 +19,19 @@ NS_ASSUME_NONNULL_BEGIN
 - (instancetype)init NS_UNAVAILABLE;
 + (instancetype)new NS_UNAVAILABLE;
 
+// Phase 1-compatible initializer. Regex flags default to nil.
 - (instancetype)initWithField:(NTYTField)field
                       matcher:(NTYTMatcher)matcher
                         value:(id<NSCopying>)value
+                      negated:(BOOL)negated
+        caseSensitiveOverride:(NTYTOptionOverride)caseSensitiveOverride
+           exactMatchOverride:(NTYTOptionOverride)exactMatchOverride
+         wordBoundaryOverride:(NTYTOptionOverride)wordBoundaryOverride;
+
+- (instancetype)initWithField:(NTYTField)field
+                      matcher:(NTYTMatcher)matcher
+                        value:(id<NSCopying>)value
+                   regexFlags:(nullable NSString *)regexFlags
                       negated:(BOOL)negated
         caseSensitiveOverride:(NTYTOptionOverride)caseSensitiveOverride
            exactMatchOverride:(NTYTOptionOverride)exactMatchOverride
