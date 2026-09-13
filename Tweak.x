@@ -2,9 +2,11 @@
 #import <YouTubeHeader/YTISectionListRenderer.h>
 #import <YouTubeHeader/YTIShelfRenderer.h>
 #import <YouTubeHeader/YTInnerTubeCollectionViewController.h>
-#import <HBLog.h>
 
 #import "NTYTVideoIdentifier.h"
+#import "NTYTVideoRuleBridge.h"
+
+#import "NTYTLogHelper.h"
 
 @interface YTIElementRendererCompatibilityOptions (NTYT)
 - (BOOL)useVideoCellControllerOnIos;
@@ -27,7 +29,7 @@ static BOOL isVideoRenderer(YTIElementRenderer *elementRenderer, int kind) {
 
     // Primary: useVideoCellControllerOnIos
     if ([elementRenderer respondsToSelector:@selector(hasCompatibilityOptions)] && elementRenderer.hasCompatibilityOptions && elementRenderer.compatibilityOptions.useVideoCellControllerOnIos) {
-        HBLogDebug(@"NTYT adLogging %d %@", kind, elementRenderer);
+        NTYTLog(@"NTYT adLogging %d %@", kind, elementRenderer);
         return YES;
     }
 
@@ -35,41 +37,9 @@ static BOOL isVideoRenderer(YTIElementRenderer *elementRenderer, int kind) {
     NSString *description = [elementRenderer description];
     NSString *postString = getVideoString(description);
     if (postString) {
-        HBLogDebug(@"NTYT getVideoString %d %@ %@", kind, postString, elementRenderer);
+        NTYTLog(@"NTYT getVideoString %d %@ %@", kind, postString, elementRenderer);
         return YES;
     }
-    return NO;
-}
-
-static NSArray<NSString *> *NTYTBlockedVideoStrings(void) {
-    return @[
-        // ここへ好きな文字列を追加
-        @"自作PC"
-    ];
-}
-
-static BOOL NTYTStringMatchesBlockedString(
-    NSString *value,
-    NSArray<NSString *> *blockedStrings
-) {
-    if (value.length == 0) {
-        return NO;
-    }
-
-    for (NSString *blocked in blockedStrings) {
-        if (blocked.length == 0) {
-            continue;
-        }
-
-        if (
-            [value rangeOfString:blocked
-                        options:NSCaseInsensitiveSearch].location
-            != NSNotFound
-        ) {
-            return YES;
-        }
-    }
-
     return NO;
 }
 
@@ -97,65 +67,17 @@ static BOOL shouldBlockStandaloneVideo(
         return NO;
     }
 
-    NSArray<NSString *> *blockedStrings =
-        NTYTBlockedVideoStrings();
-
-    if (blockedStrings.count == 0) {
-        return NO;
-    }
-
     /*
-     * handleはelementData上では
+     * Phase 3:
      *
-     *   /@xxxx
+     * 旧 @"自作PC" 手動文字列判定を廃止し、
+     * NTYTVideoMetadata を RuleEvaluator へ渡す。
      *
-     * またはURL encodeされた
-     *
-     *   /@%E3...
-     *
-     * の場合があるため、rawとdecode後の両方を判定する。
+     * 現在のBridge側には検証用として
+     * General contains "自作PC"
+     * の固定Ruleが入っている。
      */
-    NSString *decodedHandle =
-        metadata.handle.stringByRemovingPercentEncoding;
-
-    NSArray<NSString *> *values = @[
-        metadata.videoID ?: @"",
-        metadata.title ?: @"",
-        metadata.channelID ?: @"",
-        metadata.channelName ?: @"",
-        metadata.handle ?: @"",
-        decodedHandle ?: @"",
-        metadata.viewCountText ?: @""
-    ];
-
-    for (NSString *value in values) {
-        if (
-            NTYTStringMatchesBlockedString(
-                value,
-                blockedStrings
-            )
-        ) {
-            HBLogDebug(
-                @"[NTYT] blocked video: "
-                 "videoID=%@ "
-                 "title=%@ "
-                 "channelID=%@ "
-                 "channelName=%@ "
-                 "handle=%@ "
-                 "viewCount=%@",
-                metadata.videoID,
-                metadata.title,
-                metadata.channelID,
-                metadata.channelName,
-                metadata.handle,
-                metadata.viewCountText
-            );
-
-            return YES;
-        }
-    }
-
-    return NO;
+    return NTYTShouldBlockStandaloneVideoMetadata(metadata);
 }
 
 // VideoをElement単位またはSection単位で除去する。
@@ -193,7 +115,7 @@ static NSMutableArray <YTIItemSectionRenderer *> *filteredArray(NSArray <YTIItem
         NSString *sectionDescription = [sectionRenderer description];
         NSString *sectionPostString = getVideoString(sectionDescription);
         if (sectionPostString) {
-        HBLogDebug(@"NTYT sectionFallback %@ %@", sectionPostString, sectionRenderer);
+        NTYTLog(@"NTYT sectionFallback %@ %@", sectionPostString, sectionRenderer);
             return YES;
         }
 

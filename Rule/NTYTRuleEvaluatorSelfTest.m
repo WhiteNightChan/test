@@ -3,6 +3,8 @@
 #import "NTYTRule.h"
 #import "NTYTRuleEvaluator.h"
 
+#import "../NTYTLogHelper.h"
+
 static NTYTRule *NTYTRuleFromDictionaryOrNil(
     NSDictionary *dictionary
 ) {
@@ -12,7 +14,7 @@ static NTYTRule *NTYTRuleFromDictionaryOrNil(
                                error:&error];
 
     if (!rule) {
-        NSLog(@"[NTYT][SelfTest] Rule parse failed: %@", error);
+        NTYTLog(@"[NTYT][SelfTest] Rule parse failed: %@", error);
     }
 
     return rule;
@@ -77,7 +79,7 @@ BOOL NTYTRunRuleEvaluatorSelfTests(void) {
                                 context:context
                          defaultOptions:defaults[@"custom"]
                                   error:nil] != NTYTMatchResultMatch) {
-        NSLog(@"[NTYT][SelfTest] AND rule failed");
+        NTYTLog(@"[NTYT][SelfTest] AND rule failed");
         return NO;
     }
 
@@ -106,7 +108,7 @@ BOOL NTYTRunRuleEvaluatorSelfTests(void) {
                                 context:context
                          defaultOptions:defaults[@"custom"]
                                   error:nil] != NTYTMatchResultMatch) {
-        NSLog(@"[NTYT][SelfTest] Regex rule failed");
+        NTYTLog(@"[NTYT][SelfTest] Regex rule failed");
         return NO;
     }
 
@@ -134,7 +136,7 @@ BOOL NTYTRunRuleEvaluatorSelfTests(void) {
                                 context:context
                          defaultOptions:defaults[@"custom"]
                                   error:nil] != NTYTMatchResultUnknown) {
-        NSLog(@"[NTYT][SelfTest] UNKNOWN rule failed");
+        NTYTLog(@"[NTYT][SelfTest] UNKNOWN rule failed");
         return NO;
     }
 
@@ -178,7 +180,7 @@ BOOL NTYTRunRuleEvaluatorSelfTests(void) {
                                    allowRules:@[]
                                    blockRules:@[blockRule]
                       defaultOptionsBySection:defaults] != YES) {
-        NSLog(@"[NTYT][SelfTest] Block rule failed");
+        NTYTLog(@"[NTYT][SelfTest] Block rule failed");
         return NO;
     }
 
@@ -186,7 +188,7 @@ BOOL NTYTRunRuleEvaluatorSelfTests(void) {
                                    allowRules:@[allowRule]
                                    blockRules:@[blockRule]
                       defaultOptionsBySection:defaults] != NO) {
-        NSLog(@"[NTYT][SelfTest] Allow precedence failed");
+        NTYTLog(@"[NTYT][SelfTest] Allow precedence failed");
         return NO;
     }
 
@@ -214,7 +216,7 @@ BOOL NTYTRunRuleEvaluatorSelfTests(void) {
                                 context:context
                          defaultOptions:defaults[@"custom"]
                                   error:nil] != NTYTMatchResultMatch) {
-        NSLog(@"[NTYT][SelfTest] Negation failed");
+        NTYTLog(@"[NTYT][SelfTest] Negation failed");
         return NO;
     }
 
@@ -248,10 +250,10 @@ BOOL NTYTRunRuleEvaluatorSelfTests(void) {
                                 context:context
                          defaultOptions:defaults[@"custom"]
                                   error:nil] != NTYTMatchResultMatch) {
-        NSLog(@"[NTYT][SelfTest] Numeric view rule failed");
+        NTYTLog(@"[NTYT][SelfTest] Numeric view rule failed");
         return NO;
     }
 
-    NSLog(@"[NTYT][SelfTest] Phase 2 evaluator tests passed");
+    NTYTLog(@"[NTYT][SelfTest] Phase 2 evaluator tests passed");
     return YES;
 }
