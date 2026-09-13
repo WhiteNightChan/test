@@ -4,6 +4,8 @@
 #import <YouTubeHeader/YTInnerTubeCollectionViewController.h>
 #import <HBLog.h>
 
+#import "NTYTVideoIdentifier.h"
+
 @interface YTIElementRendererCompatibilityOptions (NTYT)
 - (BOOL)useVideoCellControllerOnIos;
 @end
@@ -39,6 +41,122 @@ static BOOL isVideoRenderer(YTIElementRenderer *elementRenderer, int kind) {
     return NO;
 }
 
+static NSArray<NSString *> *NTYTBlockedVideoStrings(void) {
+    return @[
+        // ここへ好きな文字列を追加
+        @"自作PC"
+    ];
+}
+
+static BOOL NTYTStringMatchesBlockedString(
+    NSString *value,
+    NSArray<NSString *> *blockedStrings
+) {
+    if (value.length == 0) {
+        return NO;
+    }
+
+    for (NSString *blocked in blockedStrings) {
+        if (blocked.length == 0) {
+            continue;
+        }
+
+        if (
+            [value rangeOfString:blocked
+                        options:NSCaseInsensitiveSearch].location
+            != NSNotFound
+        ) {
+            return YES;
+        }
+    }
+
+    return NO;
+}
+
+static BOOL shouldBlockStandaloneVideo(
+    YTIElementRenderer *elementRenderer
+) {
+    /*
+     * 既存判定を先に使う。
+     *
+     * metadata parser自体を
+     * 「動画セル判定」には使用しない。
+     */
+    if (!isVideoRenderer(elementRenderer, 2)) {
+        return NO;
+    }
+
+    NTYTVideoMetadata *metadata =
+        NTYTVideoMetadataFromRenderer(elementRenderer);
+
+    /*
+     * 73080600 video_idが取れない特殊variant等は
+     * 安全側で通す。
+     */
+    if (!metadata) {
+        return NO;
+    }
+
+    NSArray<NSString *> *blockedStrings =
+        NTYTBlockedVideoStrings();
+
+    if (blockedStrings.count == 0) {
+        return NO;
+    }
+
+    /*
+     * handleはelementData上では
+     *
+     *   /@xxxx
+     *
+     * またはURL encodeされた
+     *
+     *   /@%E3...
+     *
+     * の場合があるため、rawとdecode後の両方を判定する。
+     */
+    NSString *decodedHandle =
+        metadata.handle.stringByRemovingPercentEncoding;
+
+    NSArray<NSString *> *values = @[
+        metadata.videoID ?: @"",
+        metadata.title ?: @"",
+        metadata.channelID ?: @"",
+        metadata.channelName ?: @"",
+        metadata.handle ?: @"",
+        decodedHandle ?: @"",
+        metadata.viewCountText ?: @""
+    ];
+
+    for (NSString *value in values) {
+        if (
+            NTYTStringMatchesBlockedString(
+                value,
+                blockedStrings
+            )
+        ) {
+            HBLogDebug(
+                @"[NTYT] blocked video: "
+                 "videoID=%@ "
+                 "title=%@ "
+                 "channelID=%@ "
+                 "channelName=%@ "
+                 "handle=%@ "
+                 "viewCount=%@",
+                metadata.videoID,
+                metadata.title,
+                metadata.channelID,
+                metadata.channelName,
+                metadata.handle,
+                metadata.viewCountText
+            );
+
+            return YES;
+        }
+    }
+
+    return NO;
+}
 
 // VideoをElement単位またはSection単位で除去する。
 // useVideoCellControllerOnIosを主判定とし、EML descriptionをfallbackとして使用。
@@ -83,7 +201,7 @@ static NSMutableArray <YTIItemSectionRenderer *> *filteredArray(NSArray <YTIItem
         // VideoならSectionごと削除
         YTIItemSectionSupportedRenderers *firstObject = [contentsArray firstObject];
         YTIElementRenderer *elementRenderer = firstObject.elementRenderer;
-        return isVideoRenderer(elementRenderer, 2);
+        return shouldBlockStandaloneVideo(elementRenderer);
     }];
     [newArray removeObjectsAtIndexes:removeIndexes];
     return newArray;
