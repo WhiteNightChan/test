@@ -8,7 +8,7 @@ include $(THEOS)/makefiles/common.mk
 
 TWEAK_NAME = NoThankYouTube
 
-$(TWEAK_NAME)_FILES = $(shell find . -type f \( -name "*.x" -o -name "*.xm" \))
+$(TWEAK_NAME)_FILES = $(shell find . -type f \( -name "*.x" -o -name "*.m" \))
 $(TWEAK_NAME)_CFLAGS = -fobjc-arc
 
 include $(THEOS_MAKE_PATH)/tweak.mk
