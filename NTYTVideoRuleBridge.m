@@ -7,6 +7,7 @@
 #import "Rule/NTYTRuleEvaluationOptions.h"
 #import "Rule/NTYTRuleEvaluator.h"
 #import "Rule/NTYTRuleParser.h"
+#import "Rule/NTYTRuleParserSelfTest.h"
 
 #import "NTYTLogHelper.h"
 
@@ -26,6 +27,13 @@ static NSArray<NTYTRule *> *NTYTPhase4BlockRules(void) {
     static dispatch_once_t onceToken;
 
     dispatch_once(&onceToken, ^{
+        BOOL parserSelfTestOK = NTYTRunRuleParserSelfTests();
+
+        NTYTLog(
+            @"[NTYT][Phase4] ParserSelfTest=%@",
+            parserSelfTestOK ? @"PASS" : @"FAIL"
+        );
+
         NSError *error = nil;
 
         /*
@@ -38,7 +46,7 @@ static NSArray<NTYTRule *> *NTYTPhase4BlockRules(void) {
          */
         NTYTRuleParserResult *result =
             [NTYTRuleParser
-                parseSource:@"${ch: /^Aile ニュースCh\\.$/} 自作PC"
+                parseSource:@"自作PC"
                 sourceSection:@"general.block"
                 baseField:NTYTFieldGeneralText
                 identifierPrefix:@"phase4.general.block"
