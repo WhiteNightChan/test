@@ -28,6 +28,8 @@ NSString *NTYTStringFromField(NTYTField field) {
             return @"is_live";
         case NTYTFieldIsMember:
             return @"is_member";
+        case NTYTFieldUnsupported:
+            return @"unsupported";
         case NTYTFieldUnknown:
         default:
             return @"unknown";
@@ -74,6 +76,9 @@ NTYTField NTYTFieldFromString(NSString *string) {
     }
     if ([string isEqualToString:@"is_member"]) {
         return NTYTFieldIsMember;
+    }
+    if ([string isEqualToString:@"unsupported"]) {
+        return NTYTFieldUnsupported;
     }
 
     return NTYTFieldUnknown;

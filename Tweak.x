@@ -5,6 +5,7 @@
 
 #import "NTYTVideoIdentifier.h"
 #import "NTYTVideoRuleBridge.h"
+
 #import "NTYTLogHelper.h"
 
 @interface YTIElementRendererCompatibilityOptions (NTYT)

@@ -35,6 +35,11 @@ typedef NS_ENUM(NSInteger, NTYTField) {
     NTYTFieldTags,
     NTYTFieldIsLive,
     NTYTFieldIsMember,
+
+    // Parser sentinel for syntactically valid modifiers whose provider /
+    // runtime semantics are not implemented yet. Evaluator treats this field
+    // as UNKNOWN, so unsupported modifiers can never silently broaden a rule.
+    NTYTFieldUnsupported,
 };
 
 typedef NS_ENUM(NSInteger, NTYTMatcher) {

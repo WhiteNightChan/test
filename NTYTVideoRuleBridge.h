@@ -4,10 +4,12 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-// Phase 3 bridge.
+// Phase 4 bridge.
 //
-// Receives metadata that was already extracted from YTIElementRenderer and
-// evaluates it with the Phase 2 rule engine.
+// Receives metadata that was already extracted from YTIElementRenderer,
+// evaluates it with the existing RuleEvaluator, and currently compiles the
+// temporary "自作PC" source through NTYTRuleParser once at startup.
+//
 //
 // This function is intentionally limited to the current standalone normal
 // video path:
