@@ -38,7 +38,7 @@ static NSArray<NTYTRule *> *NTYTPhase4BlockRules(void) {
          */
         NTYTRuleParserResult *result =
             [NTYTRuleParser
-                parseSource:@"${ch: Aile ニュースCh.} 自作PC"
+                parseSource:@"${ch: /^Aile ニュースCh\\.$/} 自作PC"
                 sourceSection:@"general.block"
                 baseField:NTYTFieldGeneralText
                 identifierPrefix:@"phase4.general.block"
