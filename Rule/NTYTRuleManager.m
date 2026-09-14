@@ -114,6 +114,44 @@ NTYTBootstrapSectionOptions(void) {
                 optionsWithCaseSensitive:NO
                 exactMatch:NO
                 wordBoundary:NO],
+
+        @"videos.title.block":
+            [NTYTRuleEvaluationOptions
+                optionsWithCaseSensitive:NO
+                exactMatch:NO
+                wordBoundary:NO],
+        @"videos.channel.block":
+            [NTYTRuleEvaluationOptions
+                optionsWithCaseSensitive:NO
+                exactMatch:YES
+                wordBoundary:NO],
+        @"videos.id.block":
+            [NTYTRuleEvaluationOptions
+                optionsWithCaseSensitive:YES
+                exactMatch:YES
+                wordBoundary:NO],
+
+        @"channels.block":
+            [NTYTRuleEvaluationOptions
+                optionsWithCaseSensitive:NO
+                exactMatch:YES
+                wordBoundary:NO],
+        @"channels.allow":
+            [NTYTRuleEvaluationOptions
+                optionsWithCaseSensitive:NO
+                exactMatch:YES
+                wordBoundary:NO],
+
+        @"custom.block":
+            [NTYTRuleEvaluationOptions
+                optionsWithCaseSensitive:NO
+                exactMatch:NO
+                wordBoundary:NO],
+        @"custom.allow":
+            [NTYTRuleEvaluationOptions
+                optionsWithCaseSensitive:NO
+                exactMatch:NO
+                wordBoundary:NO],
     };
 }
 
@@ -626,6 +664,14 @@ static BOOL NTYTValidateRuleObjects(
             return NO;
         }
 
+        // Phase 6 adds defaults for every UI section without changing schemaVersion.
+        // Existing Phase 5 plists only contain general.block/general.allow, so merge
+        // the persisted dictionary over the complete current defaults.
+        NSMutableDictionary<NSString *, NTYTRuleEvaluationOptions *> *mergedOptions =
+            [NTYTBootstrapSectionOptions() mutableCopy];
+        [mergedOptions addEntriesFromDictionary:sectionOptions];
+        sectionOptions = [mergedOptions copy];
+
         [self applyAllowRules:allowRules
                    blockRules:blockRules
                    groupStates:groupStates
@@ -673,8 +719,15 @@ static BOOL NTYTValidateRuleObjects(
             return NO;
         }
 
+        // Accept a partial options dictionary from future callers, but always
+        // persist/apply the complete Phase 6 defaults so runtime evaluation
+        // never loses section semantics in the current process.
+        NSMutableDictionary<NSString *, NTYTRuleEvaluationOptions *> *completeOptions =
+            [NTYTBootstrapSectionOptions() mutableCopy];
+        [completeOptions addEntriesFromDictionary:defaultOptionsBySection];
+
         NSDictionary *encodedOptions =
-            NTYTEncodeSectionOptions(defaultOptionsBySection);
+            NTYTEncodeSectionOptions([completeOptions copy]);
         NSDictionary<NSString *, NTYTRuleEvaluationOptions *> *validatedOptions =
             NTYTDecodeSectionOptions(encodedOptions, &validationError);
         if (!validatedOptions) {
