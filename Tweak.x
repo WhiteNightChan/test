@@ -5,7 +5,6 @@
 
 #import "NTYTVideoIdentifier.h"
 #import "NTYTVideoRuleBridge.h"
-
 #import "NTYTLogHelper.h"
 
 @interface YTIElementRendererCompatibilityOptions (NTYT)
@@ -93,7 +92,7 @@ static NSMutableArray <YTIItemSectionRenderer *> *filteredArray(NSArray <YTIItem
             NSMutableArray <YTIHorizontalListSupportedRenderers *> *itemsArray = horizontalListRenderer.itemsArray;
             NSIndexSet *removeItemsArrayIndexes = [itemsArray indexesOfObjectsPassingTest:^BOOL(YTIHorizontalListSupportedRenderers *horizontalListSupportedRenderers, NSUInteger idx2, BOOL *stop2) {
                 YTIElementRenderer *elementRenderer = horizontalListSupportedRenderers.elementRenderer;
-                return isVideoRenderer(elementRenderer, 4);
+                return shouldBlockStandaloneVideo(elementRenderer);
             }];
             [itemsArray removeObjectsAtIndexes:removeItemsArrayIndexes];
         }
@@ -106,9 +105,17 @@ static NSMutableArray <YTIItemSectionRenderer *> *filteredArray(NSArray <YTIItem
         if (contentsArray.count > 1) {
             NSIndexSet *removeContentsArrayIndexes = [contentsArray indexesOfObjectsPassingTest:^BOOL(YTIItemSectionSupportedRenderers *sectionSupportedRenderers, NSUInteger idx2, BOOL *stop2) {
                 YTIElementRenderer *elementRenderer = sectionSupportedRenderers.elementRenderer;
-                return isVideoRenderer(elementRenderer, 3);
+                return shouldBlockStandaloneVideo(elementRenderer);
             }];
             [contentsArray removeObjectsAtIndexes:removeContentsArrayIndexes];
+
+            /*
+             * Multi-element sectionは各Elementを個別にRule評価済み。
+             * 後段の「firstObjectがBLOCKならSectionごと削除」へ流さない。
+             *
+             * 全要素が消えた場合だけ空Section自体を削除する。
+             */
+            return contentsArray.count == 0;
         }
 
         // Fallback: SectionRenderer.description
